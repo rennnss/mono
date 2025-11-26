@@ -1,0 +1,42 @@
+name: Walkman
+options:
+  bundleIdPrefix: com.example
+targets:
+  Walkman:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.2"
+    sources:
+      - path: ./
+        excludes:
+          - "*.yml"
+          - "*.md"
+          - "Info.plist"
+          - "WalkmanWidget/**"
+      - path: Shared
+    dependencies:
+      - target: WalkmanWidget
+        embed: true
+    info:
+      path: Info.plist
+      properties:
+        UISupportsDocumentBrowser: true
+        LSSupportsOpeningDocumentsInPlace: true
+        UIBackgroundModes: [audio]
+        NSSupportsLiveActivities: true
+
+  WalkmanWidget:
+    type: widget-extension
+    platform: iOS
+    deploymentTarget: "16.2"
+    bundleId: com.example.Walkman.WalkmanWidget
+    sources:
+      - path: ../WalkmanWidget
+        excludes:
+          - "Info.plist"
+      - path: Shared
+    info:
+      path: ../WalkmanWidget/Info.plist
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
