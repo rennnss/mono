@@ -16,7 +16,7 @@ Experience your music library with dynamic gradients, nostalgic physical media g
 | :---: | :---: | :---: |
 | <img src="https://github.com/user-attachments/assets/9caebe8a-b4ed-419a-a79d-f8d078f5cfbd" width="250"/> | <img src="https://github.com/user-attachments/assets/bee042e2-884d-4985-bcbe-fcdec1bdc1eb" width="250"/> | <img src="https://github.com/user-attachments/assets/bc1d5f84-3402-4057-8de6-5db180bcbf3b" width="250"/> |
 | **Physical Media UI** | **Minimalist Splash** | **System Integration** |
-| <img src="https://github.com/user-attachments/assets/e3fb25bb-8b53-4eda-9441-f746deb20073" width="250"/> | <img src="https://github.com/user-attachments/assets/7903dac1-5331-4e2b-b34b-45848994e7fa" width="250"/> | <img src="https://github.com/user-attachments/assets/e567f409-a257-4e0b-a912-c1349b249e51" width="250"/> |
+| <img src="https://github.com/user-attachments/assets/e3fb25bb-8b53-4eda-9441-f746deb20073" width="250"/> | <img src="https://github.com/user-attachments/assets/7903dac1-5331-4e2b-b34b-45848994e7fa" width="250"/> | <img src="https://github.com/user-attachments/assets/38592430-7e5c-4c32-bcaa-adc61604d9b5" width="250"/> |
 
 <br/>
 
