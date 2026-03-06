@@ -56,19 +56,6 @@ struct ContentView: View {
                         Spacer()
                         
                         Button(action: {
-                            viewModel.toggleLyrics()
-                        }) {
-                            Image(systemName: "mic.fill")
-                                .font(.system(size: 16))
-                                .foregroundColor(viewModel.isDarkBackground ? .white : Theme.Colors.text)
-                                .frame(width: 40, height: 40)
-                                .background(Color.white.opacity(0.2)) // Liquid glass style
-                                .border(viewModel.isDarkBackground ? .white : Theme.Colors.border, width: 2)
-                        }
-                        
-                        Spacer()
-                        
-                        Button(action: {
                             viewModel.toggleMute()
                         }) {
                             Image(systemName: viewModel.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
@@ -108,9 +95,12 @@ struct ContentView: View {
                                     }
                                     .frame(height: 300)
                                     .clipped()
-                                    .border(viewModel.isDarkBackground ? .white : Theme.Colors.border, width: 2) // Added border to album art
+                                    .border(viewModel.isDarkBackground ? .white : Theme.Colors.border, width: 2)
                                 })
                                 .padding(.horizontal)
+                                .onTapGesture {
+                                    viewModel.toggleLyrics()
+                                }
                                 
                                 // Progress Bar (Visualizer)
                                 ZStack {

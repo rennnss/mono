@@ -159,7 +159,7 @@ class WalkmanViewModel: ObservableObject {
             }
             .store(in: &cancellables)
         
-            .store(in: &cancellables)
+            //.store(in: &cancellables)
         
         audioManager.$currentTrackName
             .combineLatest(audioManager.$currentArtistName)
