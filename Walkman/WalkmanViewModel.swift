@@ -113,6 +113,10 @@ class WalkmanViewModel: ObservableObject {
     
     @Published var playbackMode: PlaybackMode = .none
     
+    @Published var currentLyrics: String? = nil
+    @Published var showLyrics: Bool = false
+    private let lyricsService = LyricsService.shared
+    
     private var audioManager = AudioManager.shared
     private var cancellables = Set<AnyCancellable>()
     
@@ -155,15 +159,16 @@ class WalkmanViewModel: ObservableObject {
             }
             .store(in: &cancellables)
         
-        audioManager.$currentTrackName
-            .sink { [weak self] name in
-                self?.currentTrack = name
-                self?.startOrUpdateActivity()
-            }
             .store(in: &cancellables)
-            
-        audioManager.$currentArtistName
-            .assign(to: \.currentArtist, on: self)
+        
+        audioManager.$currentTrackName
+            .combineLatest(audioManager.$currentArtistName)
+            .sink { [weak self] name, artist in
+                self?.currentTrack = name
+                self?.currentArtist = artist
+                self?.startOrUpdateActivity()
+                self?.fetchLyrics(title: name, artist: artist)
+            }
             .store(in: &cancellables)
             
         audioManager.$albumArt
@@ -277,6 +282,31 @@ class WalkmanViewModel: ObservableObject {
     
     func toggleMute() {
         audioManager.toggleMute()
+    }
+    
+    func toggleLyrics() {
+        showLyrics.toggle()
+    }
+    
+    private func fetchLyrics(title: String, artist: String) {
+        currentLyrics = nil // Reset while fetching
+        
+        // Don't fetch if unknown
+        guard title != "No Tape", artist != "Unknown Artist" else { return }
+        
+        Task {
+            do {
+                let lyrics = try await lyricsService.fetchLyrics(title: title, artist: artist)
+                await MainActor.run {
+                    // Check if track hasn't changed while fetching
+                    if self.currentTrack == title && self.currentArtist == artist {
+                        self.currentLyrics = lyrics
+                    }
+                }
+            } catch {
+                print("Error fetching lyrics: \(error)")
+            }
+        }
     }
     
     func setTheme(_ theme: Theme.VintageColor) {
@@ -797,6 +827,7 @@ class WalkmanViewModel: ObservableObject {
         currentDefaultArtIndex = (currentDefaultArtIndex + 1) % defaultArtImages.count
         UserDefaults.standard.set(currentDefaultArtIndex, forKey: "currentDefaultArtIndex")
     }
+
     
     // MARK: - Helpers
     func cleanTitle(_ title: String) -> String {
@@ -811,5 +842,101 @@ class WalkmanViewModel: ObservableObject {
             return cleaned.isEmpty ? name : cleaned
         }
         return name
+    }
+}
+
+// MARK: - Lyrics Service
+struct LyricsResponse: Codable {
+    let lyrics: String
+}
+
+class LyricsService {
+    static let shared = LyricsService()
+    private let fileManager = FileManager.default
+    private let lyricsDirectoryName = "Lyrics"
+    
+    private init() {
+        createLyricsDirectory()
+    }
+    
+    private var lyricsDirectoryURL: URL? {
+        guard let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+        return documentsURL.appendingPathComponent(lyricsDirectoryName)
+    }
+    
+    private func createLyricsDirectory() {
+        guard let url = lyricsDirectoryURL else { return }
+        if !fileManager.fileExists(atPath: url.path) {
+            do {
+                try fileManager.createDirectory(at: url, withIntermediateDirectories: true)
+            } catch {
+                print("Failed to create lyrics directory: \(error)")
+            }
+        }
+    }
+    
+    private func getLyricsFileURL(title: String, artist: String) -> URL? {
+        guard let dirURL = lyricsDirectoryURL else { return nil }
+        let safeTitle = title.replacingOccurrences(of: "/", with: "_")
+        let safeArtist = artist.replacingOccurrences(of: "/", with: "_")
+        let filename = "\(safeArtist)-\(safeTitle).txt"
+        return dirURL.appendingPathComponent(filename)
+    }
+    
+    func loadLyrics(title: String, artist: String) -> String? {
+        guard let fileURL = getLyricsFileURL(title: title, artist: artist) else { return nil }
+        if fileManager.fileExists(atPath: fileURL.path) {
+            do {
+                return try String(contentsOf: fileURL, encoding: .utf8)
+            } catch {
+                print("Failed to load lyrics from file: \(error)")
+            }
+        }
+        return nil
+    }
+    
+    func saveLyrics(_ lyrics: String, title: String, artist: String) {
+        guard let fileURL = getLyricsFileURL(title: title, artist: artist) else { return }
+        do {
+            try lyrics.write(to: fileURL, atomically: true, encoding: .utf8)
+        } catch {
+            print("Failed to save lyrics to file: \(error)")
+        }
+    }
+    
+    func fetchLyrics(title: String, artist: String) async throws -> String? {
+        // First check local storage
+        if let cachedLyrics = loadLyrics(title: title, artist: artist) {
+            return cachedLyrics
+        }
+        
+        // Fetch from API
+        // Clean up strings for URL (simple encoding)
+        guard let encodedArtist = artist.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+              let encodedTitle = title.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            return nil
+        }
+        
+        let urlString = "https://api.lyrics.ovh/v1/\(encodedArtist)/\(encodedTitle)"
+        guard let url = URL(string: urlString) else { return nil }
+        
+        let (data, response) = try await URLSession.shared.data(from: url)
+        
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            // 404 means no lyrics found usually
+            return nil
+        }
+        
+        let lyricsResponse = try JSONDecoder().decode(LyricsResponse.self, from: data)
+        let lyrics = lyricsResponse.lyrics
+        
+        // Save to local storage
+        if !lyrics.isEmpty {
+            saveLyrics(lyrics, title: title, artist: artist)
+        }
+        
+        return lyrics
     }
 }
