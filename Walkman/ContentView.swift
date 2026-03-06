@@ -95,9 +95,12 @@ struct ContentView: View {
                                     }
                                     .frame(height: 300)
                                     .clipped()
-                                    .border(viewModel.isDarkBackground ? .white : Theme.Colors.border, width: 2) // Added border to album art
+                                    .border(viewModel.isDarkBackground ? .white : Theme.Colors.border, width: 2)
                                 })
                                 .padding(.horizontal)
+                                .onTapGesture {
+                                    viewModel.toggleLyrics()
+                                }
                                 
                                 // Progress Bar (Visualizer)
                                 ZStack {
@@ -278,6 +281,60 @@ struct ContentView: View {
             }
             .sheet(isPresented: $showQueueEdit) {
                 QueueEditView(viewModel: viewModel)
+            }
+            .sheet(isPresented: $viewModel.showLyrics) {
+                ZStack {
+                    if !viewModel.backgroundColors.isEmpty {
+                        DynamicBackgroundView(colors: viewModel.backgroundColors)
+                    } else {
+                        viewModel.currentTheme.color.ignoresSafeArea()
+                    }
+                    
+                    VStack {
+                        HStack {
+                            Spacer()
+                            Button(action: {
+                                viewModel.showLyrics = false
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 30))
+                                    .foregroundColor(viewModel.isDarkBackground ? .white : Theme.Colors.text)
+                            }
+                            .padding()
+                        }
+                        
+                        ScrollView {
+                            VStack(spacing: 20) {
+                                Text(viewModel.currentTrack)
+                                    .font(Theme.Fonts.title)
+                                    .foregroundColor(viewModel.isDarkBackground ? .white : Theme.Colors.text)
+                                    .multilineTextAlignment(.center)
+                                
+                                Text(viewModel.currentArtist)
+                                    .font(Theme.Fonts.retro(size: 18))
+                                    .foregroundColor(viewModel.isDarkBackground ? .white.opacity(0.8) : Theme.Colors.text.opacity(0.8))
+                                
+                                if let lyrics = viewModel.currentLyrics {
+                                    Text(lyrics)
+                                        .font(Theme.Fonts.retro(size: 16))
+                                        .foregroundColor(viewModel.isDarkBackground ? .white : Theme.Colors.text)
+                                        .multilineTextAlignment(.center)
+                                        .padding()
+                                } else {
+                                    VStack(spacing: 10) {
+                                        ProgressView()
+                                            .progressViewStyle(CircularProgressViewStyle(tint: viewModel.isDarkBackground ? .white : Theme.Colors.text))
+                                        Text("Fetching Lyrics...")
+                                            .font(Theme.Fonts.retro(size: 14))
+                                            .foregroundColor(viewModel.isDarkBackground ? .white.opacity(0.7) : Theme.Colors.text.opacity(0.7))
+                                    }
+                                    .padding(.top, 50)
+                                }
+                            }
+                            .padding()
+                        }
+                    }
+                }
             }
             
             // Launch Screen Overlay

@@ -32,5 +32,5 @@ Experience your music library with dynamic gradients, nostalgic physical media g
 ## 🚀 Getting Started
 
 ### Prerequisites
-* Xcode 15.0 or later
-* iOS 16.0+ minimum deployment target
+* Xcode 26.0 or later
+* iOS 26.0+ minimum deployment target
